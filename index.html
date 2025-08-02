@@ -437,7 +437,7 @@
             
             createArena() {
                 // Main arena floor with tire marks texture
-                const groundGeometry = new THREE.PlaneGeometry(160, 160);
+                const groundGeometry = new THREE.PlaneGeometry(480, 480);
                 const groundMaterial = new THREE.MeshLambertMaterial({ 
                     color: 0x1a1a1a,
                     transparent: false
@@ -448,8 +448,8 @@
                 this.scene.add(ground);
                 
                 // Create tire mark patterns
-                for(let i = 0; i < 20; i++) {
-                    const markGeometry = new THREE.PlaneGeometry(2, 8);
+                for(let i = 0; i < 60; i++) {
+                    const markGeometry = new THREE.PlaneGeometry(6, 24);
                     const markMaterial = new THREE.MeshBasicMaterial({ 
                         color: 0x0a0a0a,
                         transparent: true,
@@ -459,23 +459,23 @@
                     mark.rotation.x = -Math.PI / 2;
                     mark.rotation.z = Math.random() * Math.PI * 2;
                     mark.position.set(
-                        (Math.random() - 0.5) * 140,
+                        (Math.random() - 0.5) * 420,
                         0.01,
-                        (Math.random() - 0.5) * 140
+                        (Math.random() - 0.5) * 420
                     );
                     this.scene.add(mark);
                 }
                 
                 // Arena walls with damage marks
-                const wallHeight = 8;
-                const wallGeometry = new THREE.BoxGeometry(160, wallHeight, 3);
+                const wallHeight = 24;
+                const wallGeometry = new THREE.BoxGeometry(480, wallHeight, 9);
                 const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
                 
                 const walls = [
-                    { pos: [0, wallHeight/2, 80], rot: [0, 0, 0] },
-                    { pos: [0, wallHeight/2, -80], rot: [0, 0, 0] },
-                    { pos: [80, wallHeight/2, 0], rot: [0, Math.PI/2, 0] },
-                    { pos: [-80, wallHeight/2, 0], rot: [0, Math.PI/2, 0] }
+                    { pos: [0, wallHeight/2, 240], rot: [0, 0, 0] },
+                    { pos: [0, wallHeight/2, -240], rot: [0, 0, 0] },
+                    { pos: [240, wallHeight/2, 0], rot: [0, Math.PI/2, 0] },
+                    { pos: [-240, wallHeight/2, 0], rot: [0, Math.PI/2, 0] }
                 ];
                 
                 walls.forEach(wall => {
@@ -489,20 +489,20 @@
                 });
                 
                 // Destructible barriers for ramming fun
-                for(let i = 0; i < 12; i++) {
+                for(let i = 0; i < 36; i++) {
                     const barrierGeometry = new THREE.BoxGeometry(
-                        Math.random() * 3 + 2,
-                        Math.random() * 2 + 1,
-                        Math.random() * 3 + 2
+                        Math.random() * 9 + 6,
+                        Math.random() * 6 + 3,
+                        Math.random() * 9 + 6
                     );
                     const barrierMaterial = new THREE.MeshLambertMaterial({ 
                         color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6) 
                     });
                     const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
                     barrier.position.set(
-                        (Math.random() - 0.5) * 120,
+                        (Math.random() - 0.5) * 360,
                         barrierGeometry.parameters.height / 2,
-                        (Math.random() - 0.5) * 120
+                        (Math.random() - 0.5) * 360
                     );
                     barrier.castShadow = true;
                     barrier.receiveShadow = true;
@@ -512,16 +512,16 @@
                 }
                 
                 // Jump ramps for epic crashes
-                for(let i = 0; i < 4; i++) {
-                    const rampGeometry = new THREE.BoxGeometry(8, 1, 12);
+                for(let i = 0; i < 12; i++) {
+                    const rampGeometry = new THREE.BoxGeometry(24, 3, 36);
                     const rampMaterial = new THREE.MeshLambertMaterial({ color: 0xffaa00 });
                     const ramp = new THREE.Mesh(rampGeometry, rampMaterial);
                     
-                    const angle = (i / 4) * Math.PI * 2;
-                    const radius = 50;
+                    const angle = (i / 12) * Math.PI * 2;
+                    const radius = 120 + Math.random() * 60;
                     ramp.position.set(
                         Math.cos(angle) * radius,
-                        0.5,
+                        1.5,
                         Math.sin(angle) * radius
                     );
                     ramp.rotation.x = -0.2; // Slight incline
@@ -630,7 +630,7 @@
                     
                     // Spread AI cars around the arena
                     const angle = (i / numAI) * Math.PI * 2;
-                    const radius = 30;
+                    const radius = 90;
                     aiCar.position.set(
                         Math.cos(angle) * radius,
                         0.5,
@@ -970,7 +970,7 @@
             }
             
             checkWallCollisions(car) {
-                const bounds = 77; // Arena bounds
+                const bounds = 231; // Arena bounds (3x bigger)
                 let bounced = false;
                 
                 if(Math.abs(car.position.x) > bounds) {
@@ -1289,13 +1289,13 @@
                 let spawnPos;
                 do {
                     const angle = Math.random() * Math.PI * 2;
-                    const radius = 40 + Math.random() * 30;
+                    const radius = 120 + Math.random() * 90;
                     spawnPos = new THREE.Vector3(
                         Math.cos(angle) * radius,
                         0.5,
                         Math.sin(angle) * radius
                     );
-                } while(spawnPos.distanceTo(this.playerCar.position) < 20);
+                } while(spawnPos.distanceTo(this.playerCar.position) < 60);
                 
                 newAiCar.position.copy(spawnPos);
                 newAiCar.userData.isAI = true;
