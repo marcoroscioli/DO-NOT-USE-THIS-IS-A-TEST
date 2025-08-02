@@ -817,10 +817,10 @@
             
             updatePlayerMovement() {
                 const carData = this.getCarData()[this.selectedCar];
-                const acceleration = 0.8;
-                const friction = 0.92;
-                const turnSpeed = 0.04;
-                const maxSpeed = carData.speed / 10; // Convert to reasonable units
+                const acceleration = 0.6;
+                const friction = 0.90;
+                const turnSpeed = 0.08;
+                const maxSpeed = carData.speed / 15; // Convert to reasonable units (slower)
                 
                 // Handle input
                 if(this.keys['KeyW']) {
@@ -829,11 +829,11 @@
                 if(this.keys['KeyS']) {
                     this.velocity.z += acceleration * 0.6; // Reverse slower
                 }
-                if(this.keys['KeyA'] && this.velocity.length() > 0.5) {
-                    this.playerCar.rotation.y += turnSpeed * (this.velocity.length() / maxSpeed);
+                if(this.keys['KeyA'] && this.velocity.length() > 0.3) {
+                    this.playerCar.rotation.y += turnSpeed * Math.min(1.2, (this.velocity.length() / maxSpeed) + 0.5);
                 }
-                if(this.keys['KeyD'] && this.velocity.length() > 0.5) {
-                    this.playerCar.rotation.y -= turnSpeed * (this.velocity.length() / maxSpeed);
+                if(this.keys['KeyD'] && this.velocity.length() > 0.3) {
+                    this.playerCar.rotation.y -= turnSpeed * Math.min(1.2, (this.velocity.length() / maxSpeed) + 0.5);
                 }
                 
                 // Turbo boost
@@ -950,9 +950,9 @@
                     direction.normalize();
                     
                     // Speed up when close to target (ramming behavior)
-                    let moveSpeed = 0.4;
+                    let moveSpeed = 0.3;
                     if(distance < 15) {
-                        moveSpeed = 0.8; // Ram speed!
+                        moveSpeed = 0.6; // Ram speed! (reduced from 0.8)
                     }
                     
                     // Apply AI movement
