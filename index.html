@@ -1334,27 +1334,20 @@
             updateCamera() {
                 if(!this.playerCar) return;
                 
-                // Dynamic camera based on speed
-                const speedFactor = Math.min(this.speed / 30, 1);
-                const dynamicOffset = this.cameraOffset.clone();
-                dynamicOffset.z += speedFactor * 5; // Pull back when going fast
-                dynamicOffset.y += speedFactor * 2;
+                // Fixed camera position directly behind the car
+                const fixedOffset = new THREE.Vector3(0, 8, 15); // Fixed distance behind car
                 
-                const idealCameraPosition = new THREE.Vector3();
-                idealCameraPosition.copy(this.playerCar.position);
-                idealCameraPosition.add(dynamicOffset);
+                // Calculate camera position in world space
+                const cameraPosition = new THREE.Vector3();
+                cameraPosition.copy(fixedOffset);
+                cameraPosition.applyQuaternion(this.playerCar.quaternion);
+                cameraPosition.add(this.playerCar.position);
                 
-                this.camera.position.lerp(idealCameraPosition, 0.08);
+                // Set camera position (no lerping for instant following)
+                this.camera.position.copy(cameraPosition);
                 
-                // Look slightly ahead of the car when moving fast
-                const lookTarget = this.playerCar.position.clone();
-                if(this.speed > 5) {
-                    const forward = new THREE.Vector3(0, 0, -speedFactor * 5);
-                    forward.applyQuaternion(this.playerCar.quaternion);
-                    lookTarget.add(forward);
-                }
-                
-                this.camera.lookAt(lookTarget);
+                // Always look at the car (not ahead)
+                this.camera.lookAt(this.playerCar.position);
             }
             
             updateHUD() {
