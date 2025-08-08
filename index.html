@@ -3,1371 +3,917 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crash Arena - 3D Ramming Championship</title>
+    <title>Enhanced Racing Championship</title>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
+            background: #1a1a1a;
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #8B0000, #FF4500);
-            color: white;
             overflow: hidden;
+            color: white;
         }
-        
+
         #gameContainer {
             position: relative;
             width: 100vw;
             height: 100vh;
         }
-        
+
         #gameCanvas {
+            background: linear-gradient(45deg, #2d5a2d 0%, #4d8c4d 25%, #2d5a2d 50%, #1a4d1a 75%, #2d5a2d 100%);
             display: block;
         }
-        
+
         #ui {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
+            top: 20px;
+            left: 20px;
             z-index: 100;
         }
-        
-        .ui-element {
-            pointer-events: auto;
+
+        #speedometer {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ff00;
+            margin-bottom: 15px;
+            min-width: 150px;
         }
-        
-        #hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+
+        #trackStatus {
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #ff9900;
+            margin-bottom: 15px;
+            text-align: center;
         }
-        
-        .hud-item {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 12px 18px;
-            border-radius: 12px;
-            border: 3px solid #FF4500;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.5);
+
+        #trackStatus.danger {
+            border-color: #ff0000;
+            background: rgba(50,0,0,0.8);
         }
-        
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 18px;
-            border-radius: 12px;
-            border: 3px solid #FF4500;
-            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.5);
+
+        #minimap {
+            width: 200px;
+            height: 200px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
         }
-        
-        #shopButton {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(45deg, #FF6B35, #F7931E);
-            border: 3px solid #FFD700;
-            color: white;
-            padding: 18px 30px;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
-            transition: all 0.3s;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        #shopButton:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.8);
-        }
-        
-        #shop {
+
+        #selectionScreen {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            border: 4px solid #FF4500;
-            border-radius: 25px;
-            padding: 35px;
-            width: 85%;
-            max-width: 900px;
-            max-height: 85%;
+            background: rgba(0,0,0,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #00ff00;
+            text-align: center;
+            z-index: 200;
+            max-width: 800px;
+            max-height: 90vh;
             overflow-y: auto;
+        }
+
+        #carSelection {
+            display: block;
+        }
+
+        #trackSelection {
             display: none;
-            box-shadow: 0 0 50px rgba(255, 69, 0, 0.7);
         }
-        
-        #shop h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: #FFD700;
-            font-size: 32px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
-        
-        .car-grid {
+
+        .selection-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 25px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
-        
-        .car-card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 3px solid #555;
-            border-radius: 18px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.4s;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        
-        .car-card:hover {
-            border-color: #FF4500;
-            transform: scale(1.08) rotateY(5deg);
-            box-shadow: 0 8px 30px rgba(255, 69, 0, 0.4);
-        }
-        
-        .car-card.owned {
-            border-color: #FFD700;
-            background: rgba(255, 215, 0, 0.15);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
-        }
-        
-        .car-card.selected {
-            border-color: #00FF00;
-            background: rgba(0, 255, 0, 0.2);
-            box-shadow: 0 6px 25px rgba(0, 255, 0, 0.5);
-        }
-        
-        .car-name {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #FFD700;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        
-        .car-stats {
-            margin: 15px 0;
-            font-size: 13px;
-        }
-        
-        .stat-bar {
-            background: #333;
-            height: 10px;
-            border-radius: 5px;
-            margin: 8px 0;
-            overflow: hidden;
-            border: 1px solid #666;
-        }
-        
-        .stat-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FF4444, #FFFF44, #44FF44);
-            border-radius: 5px;
-            transition: width 0.4s;
-            box-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
-        
-        .car-price {
-            font-size: 18px;
-            font-weight: bold;
-            color: #FFD700;
-            margin-bottom: 12px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        
-        .buy-button, .select-button {
-            background: linear-gradient(45deg, #00FF88, #00CC6A);
-            border: 2px solid #00FF88;
-            color: white;
-            padding: 10px 20px;
+
+        .option {
+            padding: 15px;
+            background: rgba(0,100,0,0.3);
+            border: 2px solid #00ff00;
             border-radius: 10px;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
             transition: all 0.3s;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        
-        .buy-button:hover, .select-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 255, 136, 0.5);
-            background: linear-gradient(45deg, #00CC6A, #009944);
-        }
-        
-        .buy-button:disabled {
-            background: #666;
-            border-color: #666;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        #closeShop {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            background: #FF4444;
-            border: 2px solid #FF6666;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 20px;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        
-        #closeShop:hover {
-            background: #CC2222;
-            transform: scale(1.1);
-        }
-        
-        #joinGameButton {
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            transform: translate(-50%, 50%);
-            background: linear-gradient(45deg, #FF4500, #FF6B35);
-            border: 4px solid #FFD700;
-            color: white;
-            padding: 25px 50px;
-            border-radius: 20px;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 8px 30px rgba(255, 69, 0, 0.6);
-            transition: all 0.4s;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
-        
-        #joinGameButton:hover {
-            transform: translate(-50%, 50%) translateY(-6px) scale(1.05);
-            box-shadow: 0 12px 40px rgba(255, 69, 0, 0.8);
-        }
-        
-        .notification {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            border: 3px solid #FFD700;
-            border-radius: 15px;
-            padding: 25px;
-            z-index: 1000;
-            display: none;
-            font-size: 18px;
-            font-weight: bold;
             text-align: center;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
         }
-        
-        #speedometer {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(0,0,0,0.9), rgba(0,0,0,0.7));
-            border: 4px solid #FF4500;
-            border-radius: 50%;
+
+        .option:hover {
+            background: rgba(0,150,0,0.5);
+            transform: scale(1.05);
+        }
+
+        .option.selected {
+            background: rgba(0,200,0,0.6);
+            border-color: #00ff88;
+        }
+
+        .car-icon {
+            width: 60px;
+            height: 40px;
+            margin: 0 auto 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            font-weight: bold;
-            color: #FFD700;
-            box-shadow: 0 0 20px rgba(255, 69, 0, 0.5);
+            border-radius: 5px;
         }
-        
-        .damage-indicator {
+
+        .track-preview {
+            width: 150px;
+            height: 100px;
+            margin: 0 auto 10px;
+            border: 2px solid #666;
+            border-radius: 5px;
+            background: #333;
+            position: relative;
+        }
+
+        #instructions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ff00;
+            max-width: 250px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #gameTitle {
+            font-size: 28px;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .continue-btn {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .continue-btn:hover {
+            background: #00cc00;
+        }
+
+        .continue-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        #gameOver {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #FF0000;
-            font-size: 48px;
+            background: rgba(0,0,0,0.95);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #ff0000;
+            text-align: center;
+            z-index: 300;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .restart-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: bold;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .restart-btn:hover {
+            background: #ff6666;
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
-        
-        <div id="ui">
-            <div id="hud">
-                <div class="hud-item">💰 Credits: $<span id="credits">5000</span></div>
-                <div class="hud-item">❤️ Armor: <span id="health">100</span>%</div>
-                <div class="hud-item">🏆 Score: <span id="score">0</span></div>
-                <div class="hud-item">👥 Cars: <span id="playerCount">4</span></div>
-            </div>
-            
-            <button id="shopButton" class="ui-element">🏪 CRASH SHOP</button>
-            
-            <div id="controls" class="ui-element">
-                <div style="color: #FFD700; font-size: 16px; margin-bottom: 8px;"><strong>🏁 RAMMING CONTROLS:</strong></div>
-                <div><strong>WASD</strong> - Drive & Steer</div>
-                <div><strong>SHIFT</strong> - Turbo Boost</div>
-                <div><strong>SPACE</strong> - Handbrake</div>
-                <div><strong>💥 RAM ENEMIES TO WIN! 💥</strong></div>
-            </div>
-            
-            <div id="speedometer">
-                <div>
-                    <div style="font-size: 14px;">SPEED</div>
-                    <div><span id="speedValue">0</span> MPH</div>
+
+        <div id="selectionScreen">
+            <div id="carSelection">
+                <h2 id="gameTitle">🏁 RACING CHAMPIONSHIP 🏁</h2>
+                <p>Choose your car:</p>
+                <div class="selection-grid" id="carGrid">
+                    <!-- Cars will be populated by JavaScript -->
                 </div>
+                <button class="continue-btn" onclick="proceedToTrackSelection()" disabled>Continue</button>
             </div>
-            
-            <button id="joinGameButton" class="ui-element">🚗💥 START RAMMING! 💥🚗</button>
-            
-            <div class="damage-indicator" id="damageIndicator">💥 CRASH! 💥</div>
-        </div>
-        
-        <div id="shop" class="ui-element">
-            <button id="closeShop">×</button>
-            <h2>🏪 CRASH ARENA MOTORS</h2>
-            <div style="text-align: center; margin-bottom: 20px; color: #FF4500; font-size: 16px;">
-                <strong>💥 THE HARDER YOU HIT, THE MORE DAMAGE YOU DEAL! 💥</strong>
+
+            <div id="trackSelection">
+                <h2>🏁 SELECT TRACK 🏁</h2>
+                <p>Choose your racing circuit:</p>
+                <div class="selection-grid" id="trackGrid">
+                    <!-- Tracks will be populated by JavaScript -->
+                </div>
+                <button class="continue-btn" onclick="startRace()" disabled>Start Race!</button>
             </div>
-            <div class="car-grid" id="carGrid"></div>
         </div>
-        
-        <div id="notification" class="notification">
-            <p id="notificationText"></p>
+
+        <div id="ui" class="hidden">
+            <div id="speedometer">
+                <div>Speed: <span id="speed">0</span> mph</div>
+                <div>Gear: <span id="gear">1</span></div>
+                <div>Lap: <span id="lap">1</span>/3</div>
+            </div>
+            <div id="trackStatus">
+                <div id="statusText">Stay on track!</div>
+                <div id="warningTimer"></div>
+            </div>
+            <div id="minimap"></div>
+        </div>
+
+        <div id="instructions" class="hidden">
+            <h3>🎮 Controls</h3>
+            <p><strong>WASD</strong> - Drive</p>
+            <p><strong>Shift</strong> - Boost</p>
+            <p><strong>Space</strong> - Handbrake</p>
+            <p><strong>R</strong> - Reset Position</p>
+            <hr style="border-color: #00ff00;">
+            <p>🏁 Complete 3 laps!</p>
+            <p>⚠️ Stay on track or get DQ'd!</p>
+        </div>
+
+        <div id="gameOver" class="hidden">
+            <h2>🏁 RACE COMPLETE 🏁</h2>
+            <div id="raceResult"></div>
+            <div class="stats-grid" id="raceStats"></div>
+            <button class="restart-btn" onclick="restartGame()">Race Again</button>
+            <button class="restart-btn" onclick="changeTrack()" style="background: #4444ff;">Change Track</button>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        class CrashArena {
-            constructor() {
-                this.scene = new THREE.Scene();
-                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                this.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                this.renderer.setClearColor(0x222222);
-                
-                // Game state
-                this.gameStarted = false;
-                this.credits = 5000;
-                this.selectedCar = 0;
-                this.ownedCars = [0];
-                this.aiCars = [];
-                this.keys = {};
-                this.cameraOffset = new THREE.Vector3(0, 8, 15);
-                
-                // Player stats
-                this.health = 100;
-                this.speed = 0;
-                this.maxSpeed = 25;
-                this.score = 0;
-                this.turboEnergy = 100;
-                this.lastCollisionTime = 0;
-                
-                // Physics
-                this.velocity = new THREE.Vector3();
-                this.acceleration = new THREE.Vector3();
-                
-                this.initGame();
-                this.setupEventListeners();
-                this.setupShop();
-                this.animate();
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game state
+        let gameStarted = false;
+        let selectedCarType = null;
+        let selectedTrack = null;
+        let raceStartTime = 0;
+        let currentLap = 1;
+        let checkpointsPassed = [];
+        let offTrackTime = 0;
+        let totalOffTrackTime = 0;
+        let isOffTrack = false;
+        let raceFinished = false;
+
+        // Car types with realistic slower speeds
+        const carTypes = {
+            hatchback: { name: 'Compact Hatchback', maxSpeed: 4, acceleration: 0.15, handling: 0.12, color: '#ff4444', emoji: '🚗' },
+            sedan: { name: 'Family Sedan', maxSpeed: 4.5, acceleration: 0.12, handling: 0.10, color: '#4444ff', emoji: '🚙' },
+            sports: { name: 'Sports Car', maxSpeed: 6, acceleration: 0.18, handling: 0.15, color: '#ff8800', emoji: '🏎️' },
+            suv: { name: 'SUV', maxSpeed: 3.5, acceleration: 0.10, handling: 0.08, color: '#44ff44', emoji: '🚐' },
+            muscle: { name: 'Muscle Car', maxSpeed: 5.5, acceleration: 0.20, handling: 0.09, color: '#8844ff', emoji: '🚗' },
+            convertible: { name: 'Convertible', maxSpeed: 5, acceleration: 0.16, handling: 0.13, color: '#ff44ff', emoji: '🏎️' },
+            truck: { name: 'Pickup Truck', maxSpeed: 3, acceleration: 0.08, handling: 0.06, color: '#996633', emoji: '🛻' },
+            coupe: { name: 'Luxury Coupe', maxSpeed: 5.8, acceleration: 0.17, handling: 0.14, color: '#00ffff', emoji: '🚗' }
+        };
+
+        // Track definitions
+        const tracks = {
+            oval: {
+                name: 'Speedway Oval',
+                description: 'Classic oval track',
+                trackPath: [],
+                checkpoints: [],
+                startX: 0,
+                startY: -150,
+                startAngle: 0
+            },
+            figure8: {
+                name: 'Figure 8 Circuit',
+                description: 'Challenging crossover track',
+                trackPath: [],
+                checkpoints: [],
+                startX: -200,
+                startY: 0,
+                startAngle: 0
+            },
+            street: {
+                name: 'City Street Course',
+                description: 'Urban racing circuit',
+                trackPath: [],
+                checkpoints: [],
+                startX: -180,
+                startY: -100,
+                startAngle: 0
+            },
+            mountain: {
+                name: 'Mountain Pass',
+                description: 'Winding mountain road',
+                trackPath: [],
+                checkpoints: [],
+                startX: -250,
+                startY: 0,
+                startAngle: 0
+            },
+            grand_prix: {
+                name: 'Grand Prix Circuit',
+                description: 'Professional racing circuit',
+                trackPath: [],
+                checkpoints: [],
+                startX: -200,
+                startY: -50,
+                startAngle: 0
             }
-            
-            initGame() {
-                // Atmospheric lighting
-                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-                this.scene.add(ambientLight);
-                
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-                directionalLight.position.set(50, 80, 50);
-                directionalLight.castShadow = true;
-                directionalLight.shadow.mapSize.width = 4096;
-                directionalLight.shadow.mapSize.height = 4096;
-                directionalLight.shadow.camera.far = 200;
-                this.scene.add(directionalLight);
-                
-                // Add dramatic lighting
-                const spotLight1 = new THREE.SpotLight(0xff4500, 0.8, 100, Math.PI / 6);
-                spotLight1.position.set(-40, 30, -40);
-                this.scene.add(spotLight1);
-                
-                const spotLight2 = new THREE.SpotLight(0x4500ff, 0.8, 100, Math.PI / 6);
-                spotLight2.position.set(40, 30, 40);
-                this.scene.add(spotLight2);
-                
-                // Create arena
-                this.createArena();
-                
-                // Create player car
-                this.createPlayerCar();
-                
-                // Create AI opponents
-                this.createAIOpponents();
-                
-                // Setup camera
-                this.camera.position.set(0, 15, 25);
-                this.camera.lookAt(0, 0, 0);
-            }
-            
-            createArena() {
-                // Main arena floor with tire marks texture
-                const groundGeometry = new THREE.PlaneGeometry(480, 480);
-                const groundMaterial = new THREE.MeshLambertMaterial({ 
-                    color: 0x1a1a1a,
-                    transparent: false
-                });
-                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-                ground.rotation.x = -Math.PI / 2;
-                ground.receiveShadow = true;
-                this.scene.add(ground);
-                
-                // Create tire mark patterns
-                for(let i = 0; i < 60; i++) {
-                    const markGeometry = new THREE.PlaneGeometry(6, 24);
-                    const markMaterial = new THREE.MeshBasicMaterial({ 
-                        color: 0x0a0a0a,
-                        transparent: true,
-                        opacity: 0.7
-                    });
-                    const mark = new THREE.Mesh(markGeometry, markMaterial);
-                    mark.rotation.x = -Math.PI / 2;
-                    mark.rotation.z = Math.random() * Math.PI * 2;
-                    mark.position.set(
-                        (Math.random() - 0.5) * 420,
-                        0.01,
-                        (Math.random() - 0.5) * 420
-                    );
-                    this.scene.add(mark);
-                }
-                
-                // Arena walls with damage marks
-                const wallHeight = 24;
-                const wallGeometry = new THREE.BoxGeometry(480, wallHeight, 9);
-                const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
-                
-                const walls = [
-                    { pos: [0, wallHeight/2, 240], rot: [0, 0, 0] },
-                    { pos: [0, wallHeight/2, -240], rot: [0, 0, 0] },
-                    { pos: [240, wallHeight/2, 0], rot: [0, Math.PI/2, 0] },
-                    { pos: [-240, wallHeight/2, 0], rot: [0, Math.PI/2, 0] }
-                ];
-                
-                walls.forEach(wall => {
-                    const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-                    wallMesh.position.set(...wall.pos);
-                    wallMesh.rotation.set(...wall.rot);
-                    wallMesh.castShadow = true;
-                    wallMesh.receiveShadow = true;
-                    wallMesh.userData.isWall = true;
-                    this.scene.add(wallMesh);
-                });
-                
-                // Destructible barriers for ramming fun
-                for(let i = 0; i < 36; i++) {
-                    const barrierGeometry = new THREE.BoxGeometry(
-                        Math.random() * 9 + 6,
-                        Math.random() * 6 + 3,
-                        Math.random() * 9 + 6
-                    );
-                    const barrierMaterial = new THREE.MeshLambertMaterial({ 
-                        color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6) 
-                    });
-                    const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
-                    barrier.position.set(
-                        (Math.random() - 0.5) * 360,
-                        barrierGeometry.parameters.height / 2,
-                        (Math.random() - 0.5) * 360
-                    );
-                    barrier.castShadow = true;
-                    barrier.receiveShadow = true;
-                    barrier.userData.isBarrier = true;
-                    barrier.userData.health = 50;
-                    this.scene.add(barrier);
-                }
-                
-                // Jump ramps for epic crashes
-                for(let i = 0; i < 12; i++) {
-                    const rampGeometry = new THREE.BoxGeometry(24, 3, 36);
-                    const rampMaterial = new THREE.MeshLambertMaterial({ color: 0xffaa00 });
-                    const ramp = new THREE.Mesh(rampGeometry, rampMaterial);
-                    
-                    const angle = (i / 12) * Math.PI * 2;
-                    const radius = 120 + Math.random() * 60;
-                    ramp.position.set(
-                        Math.cos(angle) * radius,
-                        1.5,
-                        Math.sin(angle) * radius
-                    );
-                    ramp.rotation.x = -0.2; // Slight incline
-                    ramp.rotation.y = angle + Math.PI/2;
-                    ramp.castShadow = true;
-                    ramp.receiveShadow = true;
-                    ramp.userData.isRamp = true;
-                    this.scene.add(ramp);
+        };
+
+        // Generate track paths
+        function generateTracks() {
+            // Oval track
+            const ovalPoints = [];
+            const ovalCheckpoints = [];
+            for (let i = 0; i < 360; i += 3) {
+                const angle = (i * Math.PI) / 180;
+                const x = Math.cos(angle) * 300;
+                const y = Math.sin(angle) * 150;
+                ovalPoints.push({ x, y });
+                if (i % 90 === 0) {
+                    ovalCheckpoints.push({ x, y, passed: false });
                 }
             }
-            
-            createPlayerCar() {
-                const carData = this.getCarData()[this.selectedCar];
-                this.playerCar = this.createCar(carData.color, carData.size);
-                this.playerCar.position.set(0, 0.5, 0);
-                this.playerCar.userData.health = 100;
-                this.playerCar.userData.maxSpeed = carData.speed;
-                this.playerCar.userData.weight = carData.weight;
-                this.playerCar.userData.armor = carData.armor;
-                this.scene.add(this.playerCar);
-            }
-            
-            createCar(color, size = 1, isHeavy = false) {
-                const car = new THREE.Group();
-                
-                // More aggressive car body
-                const bodyGeometry = new THREE.BoxGeometry(2.5 * size, 1 * size, 5 * size);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ 
-                    color: color,
-                    shininess: 100
-                });
-                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-                body.position.y = 0.5 * size;
-                body.castShadow = true;
-                body.receiveShadow = true;
-                car.add(body);
-                
-                // Reinforced bumpers
-                const frontBumperGeometry = new THREE.BoxGeometry(3 * size, 0.5 * size, 0.8 * size);
-                const bumperMaterial = new THREE.MeshLambertMaterial({ color: 0x444444 });
-                const frontBumper = new THREE.Mesh(frontBumperGeometry, bumperMaterial);
-                frontBumper.position.set(0, 0.3 * size, 2.9 * size);
-                frontBumper.castShadow = true;
-                car.add(frontBumper);
-                
-                const rearBumper = new THREE.Mesh(frontBumperGeometry, bumperMaterial);
-                rearBumper.position.set(0, 0.3 * size, -2.9 * size);
-                rearBumper.castShadow = true;
-                car.add(rearBumper);
-                
-                // Roof with damage resistance look
-                const roofGeometry = new THREE.BoxGeometry(2 * size, 0.8 * size, 2.5 * size);
-                const roofMaterial = new THREE.MeshLambertMaterial({ color: color });
-                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-                roof.position.y = 1.2 * size;
-                roof.castShadow = true;
-                car.add(roof);
-                
-                // Bigger, more robust wheels
-                const wheelRadius = isHeavy ? 0.5 * size : 0.4 * size;
-                const wheelGeometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.3);
-                const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
-                
-                const wheelPositions = [
-                    [-1.5 * size, wheelRadius, 2 * size],
-                    [1.5 * size, wheelRadius, 2 * size],
-                    [-1.5 * size, wheelRadius, -2 * size],
-                    [1.5 * size, wheelRadius, -2 * size]
-                ];
-                
-                wheelPositions.forEach(pos => {
-                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-                    wheel.position.set(...pos);
-                    wheel.rotation.z = Math.PI / 2;
-                    wheel.castShadow = true;
-                    car.add(wheel);
-                });
-                
-                // Add spikes for ramming effect
-                const spikeGeometry = new THREE.ConeGeometry(0.2 * size, 0.6 * size);
-                const spikeMaterial = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
-                
-                for(let i = 0; i < 6; i++) {
-                    const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
-                    const angle = (i / 6) * Math.PI * 2;
-                    spike.position.set(
-                        Math.cos(angle) * 1.8 * size,
-                        0.8 * size,
-                        Math.sin(angle) * 1.5 * size
-                    );
-                    spike.rotation.z = -angle + Math.PI/2;
-                    car.add(spike);
-                }
-                
-                return car;
-            }
-            
-            createAIOpponents() {
-                const carData = this.getCarData();
-                const numAI = 3;
-                
-                for(let i = 0; i < numAI; i++) {
-                    const randomCarIndex = Math.floor(Math.random() * carData.length);
-                    const carInfo = carData[randomCarIndex];
-                    const aiCar = this.createCar(carInfo.color, carInfo.size, carInfo.weight > 2000);
-                    
-                    // Spread AI cars around the arena
-                    const angle = (i / numAI) * Math.PI * 2;
-                    const radius = 90;
-                    aiCar.position.set(
-                        Math.cos(angle) * radius,
-                        0.5,
-                        Math.sin(angle) * radius
-                    );
-                    
-                    aiCar.userData.isAI = true;
-                    aiCar.userData.id = `ai_${i}`;
-                    aiCar.userData.health = 100;
-                    aiCar.userData.maxSpeed = carInfo.speed * 0.9;
-                    aiCar.userData.weight = carInfo.weight;
-                    aiCar.userData.armor = carInfo.armor;
-                    aiCar.userData.velocity = new THREE.Vector3();
-                    aiCar.userData.target = new THREE.Vector3();
-                    aiCar.userData.aggressiveness = Math.random() * 0.5 + 0.5;
-                    aiCar.userData.lastRam = 0;
-                    
-                    this.scene.add(aiCar);
-                    this.aiCars.push(aiCar);
+            tracks.oval.trackPath = ovalPoints;
+            tracks.oval.checkpoints = ovalCheckpoints;
+
+            // Figure 8 track
+            const fig8Points = [];
+            const fig8Checkpoints = [];
+            for (let i = 0; i < 360; i += 2) {
+                const angle = (i * Math.PI) / 180;
+                const x = Math.sin(2 * angle) * 200;
+                const y = Math.sin(angle) * 150;
+                fig8Points.push({ x, y });
+                if (i % 90 === 0) {
+                    fig8Checkpoints.push({ x, y, passed: false });
                 }
             }
-            
-            getCarData() {
-                return [
-                    { name: "Rust Bucket", color: 0x8B4513, speed: 20, weight: 1200, armor: 40, price: 0, size: 1, description: "Your trusty starter wreck" },
-                    { name: "Speed Demon", color: 0xFF1493, speed: 35, weight: 800, armor: 30, price: 2000, size: 0.9, description: "Fast but fragile racer" },
-                    { name: "Tank Destroyer", color: 0x2F4F4F, speed: 15, weight: 3000, armor: 90, price: 4000, size: 1.4, description: "Unstoppable ramming machine" },
-                    { name: "Nitro Fury", color: 0x32CD32, speed: 30, weight: 1000, armor: 50, price: 3500, size: 1, description: "Balanced speed and power" },
-                    { name: "Death Wedge", color: 0x8A2BE2, speed: 25, weight: 1800, armor: 70, price: 5000, size: 1.2, description: "Wedge-shaped ram specialist" },
-                    { name: "Turbo Crusher", color: 0xFF4500, speed: 28, weight: 2200, armor: 75, price: 6500, size: 1.3, description: "Heavy hitter with speed" },
-                    { name: "Phantom Ram", color: 0x000000, speed: 32, weight: 1100, armor: 45, price: 7500, size: 0.95, description: "Stealth ramming specialist" },
-                    { name: "Apocalypse Engine", color: 0xDC143C, speed: 22, weight: 4000, armor: 95, price: 12000, size: 1.5, description: "The ultimate destroyer" }
-                ];
-            }
-            
-            setupShop() {
-                const carGrid = document.getElementById('carGrid');
-                const carData = this.getCarData();
-                
-                carData.forEach((car, index) => {
-                    const carCard = document.createElement('div');
-                    carCard.className = 'car-card';
-                    carCard.innerHTML = `
-                        <div class="car-name">${car.name}</div>
-                        <div class="car-stats">
-                            <div>Speed: <div class="stat-bar"><div class="stat-fill" style="width: ${(car.speed/40)*100}%"></div></div></div>
-                            <div>Weight: <div class="stat-bar"><div class="stat-fill" style="width: ${(car.weight/4000)*100}%"></div></div></div>
-                            <div>Armor: <div class="stat-bar"><div class="stat-fill" style="width: ${car.armor}%"></div></div></div>
-                        </div>
-                        <div style="font-size: 13px; margin: 12px 0; color: #ccc;">${car.description}</div>
-                        <div class="car-price">${car.price}</div>
-                        <button class="buy-button" data-index="${index}">${this.ownedCars.includes(index) ? 'OWNED' : 'BUY'}</button>
-                    `;
-                    
-                    if(this.ownedCars.includes(index)) {
-                        carCard.classList.add('owned');
-                        const button = carCard.querySelector('.buy-button');
-                        button.textContent = index === this.selectedCar ? 'SELECTED' : 'SELECT';
-                        button.className = 'select-button';
-                        if(index === this.selectedCar) {
-                            carCard.classList.add('selected');
-                        }
-                    }
-                    
-                    carGrid.appendChild(carCard);
-                });
-                
-                carGrid.addEventListener('click', (e) => {
-                    if(e.target.classList.contains('buy-button') || e.target.classList.contains('select-button')) {
-                        const index = parseInt(e.target.dataset.index);
-                        this.handleCarPurchase(index);
-                    }
-                });
-            }
-            
-            handleCarPurchase(index) {
-                const carData = this.getCarData()[index];
-                
-                if(this.ownedCars.includes(index)) {
-                    this.selectedCar = index;
-                    this.showNotification(`${carData.name} ready for ramming!`);
-                    this.recreatePlayerCar();
-                } else if(this.credits >= carData.price) {
-                    this.credits -= carData.price;
-                    this.ownedCars.push(index);
-                    this.selectedCar = index;
-                    this.showNotification(`${carData.name} purchased! Time to crush!`);
-                    this.recreatePlayerCar();
-                    document.getElementById('credits').textContent = this.credits;
-                } else {
-                    this.showNotification('Need more crash money!');
-                }
-                
-                this.updateShopDisplay();
-            }
-            
-            recreatePlayerCar() {
-                if(this.playerCar) {
-                    const oldPosition = this.playerCar.position.clone();
-                    const oldRotation = this.playerCar.rotation.clone();
-                    this.scene.remove(this.playerCar);
-                    
-                    const carData = this.getCarData()[this.selectedCar];
-                    this.playerCar = this.createCar(carData.color, carData.size, carData.weight > 2000);
-                    this.playerCar.position.copy(oldPosition);
-                    this.playerCar.rotation.copy(oldRotation);
-                    this.playerCar.userData.health = this.health;
-                    this.playerCar.userData.maxSpeed = carData.speed;
-                    this.playerCar.userData.weight = carData.weight;
-                    this.playerCar.userData.armor = carData.armor;
-                    this.scene.add(this.playerCar);
+            tracks.figure8.trackPath = fig8Points;
+            tracks.figure8.checkpoints = fig8Checkpoints;
+
+            // Street circuit
+            const streetPoints = [
+                {x: -200, y: -100}, {x: 200, y: -100}, {x: 200, y: -50},
+                {x: 100, y: -50}, {x: 100, y: 50}, {x: 200, y: 50},
+                {x: 200, y: 100}, {x: -200, y: 100}, {x: -200, y: 50},
+                {x: -100, y: 50}, {x: -100, y: -50}, {x: -200, y: -50}
+            ];
+            tracks.street.trackPath = streetPoints;
+            tracks.street.checkpoints = [
+                {x: 0, y: -100, passed: false}, {x: 200, y: 0, passed: false},
+                {x: 0, y: 100, passed: false}, {x: -200, y: 0, passed: false}
+            ];
+
+            // Mountain pass
+            const mountainPoints = [];
+            const mountainCheckpoints = [];
+            for (let i = 0; i < 720; i += 4) {
+                const t = i / 720;
+                const angle = t * Math.PI * 4;
+                const radius = 150 + Math.sin(angle * 2) * 50;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius + t * 100 - 50;
+                mountainPoints.push({ x, y });
+                if (i % 180 === 0) {
+                    mountainCheckpoints.push({ x, y, passed: false });
                 }
             }
-            
-            updateShopDisplay() {
-                const carGrid = document.getElementById('carGrid');
-                carGrid.innerHTML = '';
-                this.setupShop();
-            }
-            
-            showNotification(message) {
-                const notification = document.getElementById('notification');
-                const notificationText = document.getElementById('notificationText');
-                notificationText.textContent = message;
-                notification.style.display = 'block';
-                
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
-            }
-            
-            showDamageIndicator() {
-                const indicator = document.getElementById('damageIndicator');
-                indicator.style.opacity = '1';
-                setTimeout(() => {
-                    indicator.style.opacity = '0';
-                }, 500);
-            }
-            
-            setupEventListeners() {
-                window.addEventListener('keydown', (e) => {
-                    this.keys[e.code] = true;
-                });
-                
-                window.addEventListener('keyup', (e) => {
-                    this.keys[e.code] = false;
-                });
-                
-                document.getElementById('shopButton').addEventListener('click', () => {
-                    document.getElementById('shop').style.display = 'block';
-                });
-                
-                document.getElementById('closeShop').addEventListener('click', () => {
-                    document.getElementById('shop').style.display = 'none';
-                });
-                
-                document.getElementById('joinGameButton').addEventListener('click', () => {
-                    this.startGame();
-                });
-                
-                window.addEventListener('resize', () => {
-                    this.camera.aspect = window.innerWidth / window.innerHeight;
-                    this.camera.updateProjectionMatrix();
-                    this.renderer.setSize(window.innerWidth, window.innerHeight);
-                });
-            }
-            
-            startGame() {
-                this.gameStarted = true;
-                document.getElementById('joinGameButton').style.display = 'none';
-                this.showNotification('🚗💥 RAMMING TIME! Crash into enemies to destroy them! 💥🚗');
-            }
-            
-            updateGame() {
-                if(!this.gameStarted || !this.playerCar) return;
-                
-                this.updatePlayerMovement();
-                this.updateAICars();
-                this.checkCollisions();
-                this.updateCamera();
-                this.updateHUD();
-                this.cleanupDestroyedCars();
-            }
-            
-            updatePlayerMovement() {
-                const carData = this.getCarData()[this.selectedCar];
-                const acceleration = 0.6;
-                const friction = 0.90;
-                const turnSpeed = 0.08;
-                const maxSpeed = carData.speed / 15; // Convert to reasonable units (slower)
-                
-                // Handle input
-                if(this.keys['KeyW']) {
-                    this.velocity.z -= acceleration;
-                }
-                if(this.keys['KeyS']) {
-                    this.velocity.z += acceleration * 0.6; // Reverse slower
-                }
-                if(this.keys['KeyA'] && this.velocity.length() > 0.3) {
-                    this.playerCar.rotation.y += turnSpeed * Math.min(1.2, (this.velocity.length() / maxSpeed) + 0.5);
-                }
-                if(this.keys['KeyD'] && this.velocity.length() > 0.3) {
-                    this.playerCar.rotation.y -= turnSpeed * Math.min(1.2, (this.velocity.length() / maxSpeed) + 0.5);
-                }
-                
-                // Turbo boost
-                if(this.keys['ShiftLeft'] && this.turboEnergy > 0) {
-                    this.velocity.multiplyScalar(1.05);
-                    this.turboEnergy -= 2;
-                    
-                    // Add turbo particle effects
-                    if(Math.random() < 0.3) {
-                        this.createTurboEffect();
-                    }
-                } else {
-                    this.turboEnergy = Math.min(100, this.turboEnergy + 0.5);
-                }
-                
-                // Handbrake
-                if(this.keys['Space']) {
-                    this.velocity.multiplyScalar(0.85);
-                }
-                
-                // Apply friction
-                this.velocity.multiplyScalar(friction);
-                
-                // Limit speed
-                if(this.velocity.length() > maxSpeed) {
-                    this.velocity.normalize().multiplyScalar(maxSpeed);
-                }
-                
-                // Apply velocity to car (local space)
-                const forward = new THREE.Vector3(0, 0, -1);
-                forward.applyQuaternion(this.playerCar.quaternion);
-                const right = new THREE.Vector3(1, 0, 0);
-                right.applyQuaternion(this.playerCar.quaternion);
-                
-                const moveVector = new THREE.Vector3();
-                moveVector.add(forward.multiplyScalar(this.velocity.z));
-                moveVector.add(right.multiplyScalar(this.velocity.x));
-                
-                this.playerCar.position.add(moveVector);
-                
-                // Update speed for HUD
-                this.speed = this.velocity.length() * 10; // Scale for display
-                
-                // Keep player in bounds with wall collision
-                this.checkWallCollisions(this.playerCar);
-            }
-            
-            createTurboEffect() {
-                const exhaustGeometry = new THREE.SphereGeometry(0.3);
-                const exhaustMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0xff4500,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                const exhaust = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
-                
-                // Position behind car
-                const behind = new THREE.Vector3(0, 0, 2.5);
-                behind.applyQuaternion(this.playerCar.quaternion);
-                exhaust.position.copy(this.playerCar.position).add(behind);
-                exhaust.position.y += 0.5;
-                
-                this.scene.add(exhaust);
-                
-                // Animate exhaust effect
-                let life = 1;
-                const animate = () => {
-                    life -= 0.05;
-                    exhaust.scale.setScalar(2 - life);
-                    exhaust.material.opacity = life;
-                    exhaust.position.y += 0.1;
-                    
-                    if(life > 0) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        this.scene.remove(exhaust);
-                    }
-                };
-                animate();
-            }
-            
-            updateAICars() {
-                this.aiCars.forEach((aiCar, index) => {
-                    if(aiCar.userData.health <= 0) return;
-                    
-                    const aiData = aiCar.userData;
-                    const playerPos = this.playerCar.position;
-                    const aiPos = aiCar.position;
-                    
-                    // AI behavior: aggressive ramming
-                    let target = aiData.target;
-                    const currentTime = Date.now();
-                    
-                    // Choose target based on AI aggressiveness
-                    if(Math.random() < 0.02 || target.length() === 0) {
-                        if(Math.random() < aiData.aggressiveness) {
-                            // Target player for ramming
-                            target.copy(playerPos);
-                        } else {
-                            // Target other AI cars
-                            const otherAI = this.aiCars.filter(car => car !== aiCar && car.userData.health > 0);
-                            if(otherAI.length > 0) {
-                                const randomTarget = otherAI[Math.floor(Math.random() * otherAI.length)];
-                                target.copy(randomTarget.position);
-                            } else {
-                                target.copy(playerPos);
-                            }
-                        }
-                    }
-                    
-                    // Move towards target aggressively
-                    const direction = new THREE.Vector3().subVectors(target, aiPos);
-                    const distance = direction.length();
-                    direction.normalize();
-                    
-                    // Speed up when close to target (ramming behavior)
-                    let moveSpeed = 0.3;
-                    if(distance < 15) {
-                        moveSpeed = 0.6; // Ram speed! (reduced from 0.8)
-                    }
-                    
-                    // Apply AI movement
-                    const moveVector = direction.multiplyScalar(moveSpeed);
-                    aiCar.position.add(moveVector);
-                    
-                    // Face target
-                    aiCar.lookAt(target);
-                    
-                    // Store velocity for collision calculations
-                    aiData.velocity = moveVector;
-                    
-                    this.checkWallCollisions(aiCar);
-                });
-            }
-            
-            checkWallCollisions(car) {
-                const bounds = 231; // Arena bounds (3x bigger)
-                let bounced = false;
-                
-                if(Math.abs(car.position.x) > bounds) {
-                    car.position.x = Math.sign(car.position.x) * bounds;
-                    if(car.userData.velocity) {
-                        car.userData.velocity.x *= -0.5;
-                    }
-                    if(car === this.playerCar) {
-                        this.velocity.x *= -0.5;
-                    }
-                    bounced = true;
-                }
-                
-                if(Math.abs(car.position.z) > bounds) {
-                    car.position.z = Math.sign(car.position.z) * bounds;
-                    if(car.userData.velocity) {
-                        car.userData.velocity.z *= -0.5;
-                    }
-                    if(car === this.playerCar) {
-                        this.velocity.z *= -0.5;
-                    }
-                    bounced = true;
-                }
-                
-                if(bounced && car === this.playerCar) {
-                    this.showDamageIndicator();
-                    this.health -= 5;
-                }
-            }
-            
-            checkCollisions() {
-                const currentTime = Date.now();
-                
-                // Player vs AI collisions
-                this.aiCars.forEach(aiCar => {
-                    if(aiCar.userData.health <= 0) return;
-                    
-                    const distance = this.playerCar.position.distanceTo(aiCar.position);
-                    if(distance < 4 && currentTime - this.lastCollisionTime > 500) {
-                        this.handleCarCollision(this.playerCar, aiCar);
-                        this.lastCollisionTime = currentTime;
-                    }
-                });
-                
-                // AI vs AI collisions
-                for(let i = 0; i < this.aiCars.length; i++) {
-                    for(let j = i + 1; j < this.aiCars.length; j++) {
-                        const car1 = this.aiCars[i];
-                        const car2 = this.aiCars[j];
-                        
-                        if(car1.userData.health <= 0 || car2.userData.health <= 0) continue;
-                        
-                        const distance = car1.position.distanceTo(car2.position);
-                        if(distance < 4) {
-                            this.handleAICollision(car1, car2);
-                        }
-                    }
-                }
-            }
-            
-            handleCarCollision(playerCar, aiCar) {
-                const playerData = this.getCarData()[this.selectedCar];
-                const playerSpeed = this.velocity.length();
-                const aiSpeed = aiCar.userData.velocity ? aiCar.userData.velocity.length() : 0;
-                
-                // Calculate damage based on weight, speed, and armor
-                const playerMomentum = playerData.weight * playerSpeed;
-                const aiMomentum = (aiCar.userData.weight || 1000) * aiSpeed;
-                
-                const playerDamage = Math.max(5, (aiMomentum / playerData.armor) * 10);
-                const aiDamage = Math.max(10, (playerMomentum / (aiCar.userData.armor || 50)) * 15);
-                
-                // Apply damage
-                this.health -= playerDamage;
-                aiCar.userData.health -= aiDamage;
-                
-                // Visual and audio feedback
-                this.showDamageIndicator();
-                this.createCollisionEffect(playerCar.position, aiCar.position);
-                
-                // Knockback effect
-                const knockbackDirection = new THREE.Vector3().subVectors(aiCar.position, playerCar.position).normalize();
-                const knockbackForce = (playerSpeed + aiSpeed) * 0.3;
-                
-                // Apply knockback
-                aiCar.position.add(knockbackDirection.multiplyScalar(knockbackForce));
-                playerCar.position.add(knockbackDirection.multiplyScalar(-knockbackForce * 0.5));
-                
-                // Reduce velocities
-                this.velocity.multiplyScalar(0.3);
-                if(aiCar.userData.velocity) {
-                    aiCar.userData.velocity.multiplyScalar(0.3);
-                }
-                
-                // Check for destruction
-                if(aiCar.userData.health <= 0) {
-                    this.destroyAICar(aiCar);
-                    this.score += 100;
-                    this.credits += 300;
-                    this.showNotification(`💥 CRASH KILL! +$300! 💥`);
-                }
-                
-                if(this.health <= 0) {
-                    this.respawnPlayer();
-                }
-            }
-            
-            handleAICollision(car1, car2) {
-                const speed1 = car1.userData.velocity ? car1.userData.velocity.length() : 0;
-                const speed2 = car2.userData.velocity ? car2.userData.velocity.length() : 0;
-                
-                const momentum1 = (car1.userData.weight || 1000) * speed1;
-                const momentum2 = (car2.userData.weight || 1000) * speed2;
-                
-                const damage1 = Math.max(5, momentum2 / (car1.userData.armor || 50) * 8);
-                const damage2 = Math.max(5, momentum1 / (car2.userData.armor || 50) * 8);
-                
-                car1.userData.health -= damage1;
-                car2.userData.health -= damage2;
-                
-                this.createCollisionEffect(car1.position, car2.position);
-                
-                // Knockback
-                const knockbackDirection = new THREE.Vector3().subVectors(car2.position, car1.position).normalize();
-                const knockbackForce = (speed1 + speed2) * 0.2;
-                
-                car2.position.add(knockbackDirection.multiplyScalar(knockbackForce));
-                car1.position.add(knockbackDirection.multiplyScalar(-knockbackForce));
-                
-                // Check for destruction
-                if(car1.userData.health <= 0) {
-                    this.destroyAICar(car1);
-                }
-                if(car2.userData.health <= 0) {
-                    this.destroyAICar(car2);
-                }
-            }
-            
-            createCollisionEffect(pos1, pos2) {
-                const midPoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
-                
-                // Create explosion effect
-                const explosionGeometry = new THREE.SphereGeometry(3);
-                const explosionMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0xff8800,
-                    transparent: true,
-                    opacity: 0.9
-                });
-                const explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
-                explosion.position.copy(midPoint);
-                this.scene.add(explosion);
-                
-                // Create sparks
-                for(let i = 0; i < 10; i++) {
-                    const sparkGeometry = new THREE.SphereGeometry(0.1);
-                    const sparkMaterial = new THREE.MeshBasicMaterial({ 
-                        color: 0xffff00,
-                        transparent: true,
-                        opacity: 1
-                    });
-                    const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
-                    spark.position.copy(midPoint);
-                    
-                    const sparkVelocity = new THREE.Vector3(
-                        (Math.random() - 0.5) * 10,
-                        Math.random() * 5 + 2,
-                        (Math.random() - 0.5) * 10
-                    );
-                    
-                    this.scene.add(spark);
-                    
-                    // Animate spark
-                    let sparkLife = 1;
-                    const animateSpark = () => {
-                        sparkLife -= 0.05;
-                        spark.position.add(sparkVelocity.multiplyScalar(0.05));
-                        sparkVelocity.y -= 0.3; // Gravity
-                        spark.material.opacity = sparkLife;
-                        
-                        if(sparkLife > 0) {
-                            requestAnimationFrame(animateSpark);
-                        } else {
-                            this.scene.remove(spark);
-                        }
-                    };
-                    animateSpark();
-                }
-                
-                // Animate main explosion
-                let scale = 0.1;
-                const animate = () => {
-                    scale += 0.15;
-                    explosion.scale.setScalar(scale);
-                    explosion.material.opacity -= 0.08;
-                    
-                    if(explosion.material.opacity > 0) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        this.scene.remove(explosion);
-                    }
-                };
-                animate();
-            }
-            
-            destroyAICar(aiCar) {
-                // Create destruction effect
-                this.createDestructionEffect(aiCar.position);
-                
-                // Mark as destroyed (don't remove immediately for visual effect)
-                aiCar.userData.health = 0;
-                aiCar.userData.destroyed = true;
-                
-                // Fade out the car
-                aiCar.traverse((child) => {
-                    if(child.material) {
-                        child.material.transparent = true;
-                    }
-                });
-                
-                let opacity = 1;
-                const fadeOut = () => {
-                    opacity -= 0.05;
-                    aiCar.traverse((child) => {
-                        if(child.material) {
-                            child.material.opacity = opacity;
-                        }
-                    });
-                    
-                    if(opacity > 0) {
-                        requestAnimationFrame(fadeOut);
-                    } else {
-                        this.scene.remove(aiCar);
-                        // Respawn after delay
-                        setTimeout(() => this.respawnAICar(aiCar), 3000);
-                    }
-                };
-                fadeOut();
-            }
-            
-            createDestructionEffect(position) {
-                // Large explosion
-                const explosionGeometry = new THREE.SphereGeometry(5);
-                const explosionMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0xff4400,
-                    transparent: true,
-                    opacity: 1
-                });
-                const explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
-                explosion.position.copy(position);
-                this.scene.add(explosion);
-                
-                // Car parts flying
-                for(let i = 0; i < 15; i++) {
-                    const partGeometry = new THREE.BoxGeometry(
-                        Math.random() * 0.5 + 0.2,
-                        Math.random() * 0.5 + 0.2,
-                        Math.random() * 0.5 + 0.2
-                    );
-                    const partMaterial = new THREE.MeshLambertMaterial({ 
-                        color: new THREE.Color().setHSL(Math.random(), 0.8, 0.5),
-                        transparent: true
-                    });
-                    const part = new THREE.Mesh(partGeometry, partMaterial);
-                    part.position.copy(position);
-                    
-                    const partVelocity = new THREE.Vector3(
-                        (Math.random() - 0.5) * 15,
-                        Math.random() * 8 + 3,
-                        (Math.random() - 0.5) * 15
-                    );
-                    
-                    this.scene.add(part);
-                    
-                    // Animate flying part
-                    let partLife = 2;
-                    const animatePart = () => {
-                        partLife -= 0.02;
-                        part.position.add(partVelocity.multiplyScalar(0.02));
-                        partVelocity.y -= 0.4; // Gravity
-                        part.rotation.x += 0.1;
-                        part.rotation.y += 0.1;
-                        part.material.opacity = partLife / 2;
-                        
-                        if(partLife > 0 && part.position.y > 0) {
-                            requestAnimationFrame(animatePart);
-                        } else {
-                            this.scene.remove(part);
-                        }
-                    };
-                    animatePart();
-                }
-                
-                // Animate main explosion
-                let scale = 0.1;
-                const animate = () => {
-                    scale += 0.2;
-                    explosion.scale.setScalar(scale);
-                    explosion.material.opacity -= 0.06;
-                    
-                    if(explosion.material.opacity > 0) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        this.scene.remove(explosion);
-                    }
-                };
-                animate();
-            }
-            
-            respawnAICar(oldCar) {
-                const carData = this.getCarData();
-                const randomCarIndex = Math.floor(Math.random() * carData.length);
-                const carInfo = carData[randomCarIndex];
-                const newAiCar = this.createCar(carInfo.color, carInfo.size, carInfo.weight > 2000);
-                
-                // Random spawn position away from player
-                let spawnPos;
-                do {
-                    const angle = Math.random() * Math.PI * 2;
-                    const radius = 120 + Math.random() * 90;
-                    spawnPos = new THREE.Vector3(
-                        Math.cos(angle) * radius,
-                        0.5,
-                        Math.sin(angle) * radius
-                    );
-                } while(spawnPos.distanceTo(this.playerCar.position) < 60);
-                
-                newAiCar.position.copy(spawnPos);
-                newAiCar.userData.isAI = true;
-                newAiCar.userData.id = oldCar.userData.id;
-                newAiCar.userData.health = 100;
-                newAiCar.userData.maxSpeed = carInfo.speed * 0.9;
-                newAiCar.userData.weight = carInfo.weight;
-                newAiCar.userData.armor = carInfo.armor;
-                newAiCar.userData.velocity = new THREE.Vector3();
-                newAiCar.userData.target = new THREE.Vector3();
-                newAiCar.userData.aggressiveness = Math.random() * 0.5 + 0.5;
-                newAiCar.userData.lastRam = 0;
-                
-                this.scene.add(newAiCar);
-                
-                // Replace in array
-                const index = this.aiCars.indexOf(oldCar);
-                if(index !== -1) {
-                    this.aiCars[index] = newAiCar;
-                }
-            }
-            
-            cleanupDestroyedCars() {
-                this.aiCars = this.aiCars.filter(car => car.userData.health > 0);
-            }
-            
-            respawnPlayer() {
-                this.playerCar.position.set(0, 0.5, 0);
-                this.playerCar.rotation.set(0, 0, 0);
-                this.velocity.set(0, 0, 0);
-                this.health = 100;
-                this.speed = 0;
-                this.showNotification('💀 WRECKED! Back to the garage! 💀');
-            }
-            
-            updateCamera() {
-                if(!this.playerCar) return;
-                
-                // Fixed camera position directly behind the car
-                const fixedOffset = new THREE.Vector3(0, 8, 15); // Fixed distance behind car
-                
-                // Calculate camera position in world space
-                const cameraPosition = new THREE.Vector3();
-                cameraPosition.copy(fixedOffset);
-                cameraPosition.applyQuaternion(this.playerCar.quaternion);
-                cameraPosition.add(this.playerCar.position);
-                
-                // Set camera position (no lerping for instant following)
-                this.camera.position.copy(cameraPosition);
-                
-                // Always look at the car (not ahead)
-                this.camera.lookAt(this.playerCar.position);
-            }
-            
-            updateHUD() {
-                document.getElementById('speedValue').textContent = Math.floor(this.speed);
-                document.getElementById('health').textContent = Math.max(0, Math.floor(this.health));
-                document.getElementById('credits').textContent = this.credits;
-                document.getElementById('score').textContent = this.score;
-                document.getElementById('playerCount').textContent = this.aiCars.filter(car => car.userData.health > 0).length + 1;
-            }
-            
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                this.updateGame();
-                this.renderer.render(this.scene, this.camera);
-            }
+            tracks.mountain.trackPath = mountainPoints;
+            tracks.mountain.checkpoints = mountainCheckpoints;
+
+            // Grand Prix circuit
+            const gpPoints = [
+                {x: -200, y: -50}, {x: -150, y: -100}, {x: 0, y: -120},
+                {x: 150, y: -100}, {x: 200, y: -50}, {x: 180, y: 0},
+                {x: 200, y: 50}, {x: 150, y: 100}, {x: 0, y: 120},
+                {x: -150, y: 100}, {x: -200, y: 50}, {x: -180, y: 0}
+            ];
+            tracks.grand_prix.trackPath = gpPoints;
+            tracks.grand_prix.checkpoints = [
+                {x: -75, y: -75, passed: false}, {x: 75, y: -75, passed: false},
+                {x: 75, y: 75, passed: false}, {x: -75, y: 75, passed: false}
+            ];
         }
-        
-        window.addEventListener('load', () => {
-            new CrashArena();
+
+        // Player car
+        const car = {
+            x: 0, y: 0, vx: 0, vy: 0, angle: 0, speed: 0,
+            maxSpeed: 10, acceleration: 0.3, friction: 0.92,
+            handling: 0.12, boosting: false, handbraking: false
+        };
+
+        // Camera
+        const camera = { x: 0, y: 0 };
+
+        // Initialize selections
+        function initializeSelections() {
+            const carGrid = document.getElementById('carGrid');
+            const trackGrid = document.getElementById('trackGrid');
+
+            // Populate car selection
+            Object.entries(carTypes).forEach(([key, carType]) => {
+                const option = document.createElement('div');
+                option.className = 'option';
+                option.onclick = () => selectCar(key);
+                option.innerHTML = `
+                    <div class="car-icon" style="background: ${carType.color};">${carType.emoji}</div>
+                    <div><strong>${carType.name}</strong></div>
+                    <small>Speed: ${carType.maxSpeed}/6</small><br>
+                    <small>Handling: ${Math.round(carType.handling*50)}/10</small>
+                `;
+                option.id = `car-${key}`;
+                carGrid.appendChild(option);
+            });
+
+            // Populate track selection
+            Object.entries(tracks).forEach(([key, track]) => {
+                const option = document.createElement('div');
+                option.className = 'option';
+                option.onclick = () => selectTrack(key);
+                option.innerHTML = `
+                    <div class="track-preview"></div>
+                    <div><strong>${track.name}</strong></div>
+                    <small>${track.description}</small>
+                `;
+                option.id = `track-${key}`;
+                trackGrid.appendChild(option);
+            });
+
+            generateTracks();
+        }
+
+        function selectCar(type) {
+            selectedCarType = type;
+            document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`car-${type}`).classList.add('selected');
+            document.querySelector('#carSelection .continue-btn').disabled = false;
+        }
+
+        function selectTrack(type) {
+            selectedTrack = type;
+            document.querySelectorAll('#trackGrid .option').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`track-${type}`).classList.add('selected');
+            document.querySelector('#trackSelection .continue-btn').disabled = false;
+        }
+
+        function proceedToTrackSelection() {
+            document.getElementById('carSelection').style.display = 'none';
+            document.getElementById('trackSelection').style.display = 'block';
+        }
+
+        function startRace() {
+            const carStats = carTypes[selectedCarType];
+            car.maxSpeed = carStats.maxSpeed;
+            car.acceleration = carStats.acceleration;
+            car.handling = carStats.handling;
+
+            const track = tracks[selectedTrack];
+            car.x = track.startX;
+            car.y = track.startY;
+            car.angle = track.startAngle;
+            car.vx = car.vy = car.speed = 0;
+
+            // Reset race state
+            currentLap = 1;
+            checkpointsPassed = track.checkpoints.map(() => false);
+            offTrackTime = totalOffTrackTime = 0;
+            isOffTrack = raceFinished = false;
+            raceStartTime = Date.now();
+
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('ui').classList.remove('hidden');
+            document.getElementById('instructions').classList.remove('hidden');
+
+            gameStarted = true;
+            gameLoop();
+        }
+
+        // Input handling
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'r') resetCarPosition();
         });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        function resetCarPosition() {
+            const track = tracks[selectedTrack];
+            car.x = track.startX;
+            car.y = track.startY;
+            car.vx = car.vy = car.speed = 0;
+            car.angle = track.startAngle;
+            offTrackTime = 0;
+            isOffTrack = false;
+        }
+
+        function isPointOnTrack(x, y) {
+            const track = tracks[selectedTrack];
+            const trackWidth = 40;
+            
+            let minDist = Infinity;
+            for (let i = 0; i < track.trackPath.length; i++) {
+                const point = track.trackPath[i];
+                const dx = x - point.x;
+                const dy = y - point.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                minDist = Math.min(minDist, dist);
+            }
+            
+            return minDist <= trackWidth;
+        }
+
+        function checkCheckpoints() {
+            const track = tracks[selectedTrack];
+            track.checkpoints.forEach((checkpoint, index) => {
+                const dx = car.x - checkpoint.x;
+                const dy = car.y - checkpoint.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 30 && !checkpointsPassed[index]) {
+                    checkpointsPassed[index] = true;
+                    
+                    // Check if all checkpoints passed
+                    if (checkpointsPassed.every(passed => passed)) {
+                        if (currentLap < 3) {
+                            currentLap++;
+                            checkpointsPassed = checkpointsPassed.map(() => false);
+                        } else if (!raceFinished) {
+                            finishRace(false);
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCar() {
+            if (raceFinished) return;
+
+            // Handle input
+            let accelerating = false;
+            car.boosting = car.handbraking = false;
+
+            if (keys['w']) { car.speed += car.acceleration; accelerating = true; }
+            if (keys['s']) car.speed -= car.acceleration * 0.7;
+            if (keys['a']) car.angle -= car.handling * Math.max(0.3, Math.abs(car.speed) / car.maxSpeed);
+            if (keys['d']) car.angle += car.handling * Math.max(0.3, Math.abs(car.speed) / car.maxSpeed);
+            if (keys['shift']) { car.boosting = true; if (accelerating) car.speed += car.acceleration * 0.3; }
+            if (keys[' ']) { car.handbraking = true; car.speed *= 0.85; }
+
+            const maxSpeed = car.boosting ? car.maxSpeed * 1.3 : car.maxSpeed;
+            car.speed = Math.max(-maxSpeed * 0.5, Math.min(maxSpeed, car.speed));
+
+            if (!accelerating && !keys['s']) car.speed *= car.friction;
+
+            car.vx = Math.cos(car.angle) * car.speed;
+            car.vy = Math.sin(car.angle) * car.speed;
+            car.x += car.vx;
+            car.y += car.vy;
+
+            // Track boundary checking
+            const onTrack = isPointOnTrack(car.x, car.y);
+            if (!onTrack) {
+                if (!isOffTrack) {
+                    isOffTrack = true;
+                    offTrackTime = Date.now();
+                }
+                
+                const timeDiff = (Date.now() - offTrackTime) / 1000;
+                if (timeDiff >= 3) {
+                    finishRace(true);
+                    return;
+                }
+            } else {
+                if (isOffTrack) {
+                    totalOffTrackTime += (Date.now() - offTrackTime) / 1000;
+                    isOffTrack = false;
+                }
+            }
+
+            checkCheckpoints();
+
+            camera.x = car.x - canvas.width / 2;
+            camera.y = car.y - canvas.height / 2;
+        }
+
+        function finishRace(disqualified) {
+            raceFinished = true;
+            const raceTime = (Date.now() - raceStartTime) / 1000;
+            
+            document.getElementById('raceResult').innerHTML = disqualified 
+                ? '<span style="color: #ff4444;">❌ DISQUALIFIED</span><br>You went off-track for too long!'
+                : '<span style="color: #44ff44;">🏆 RACE COMPLETE!</span>';
+            
+            document.getElementById('raceStats').innerHTML = `
+                <div>Race Time:</div><div>${raceTime.toFixed(2)}s</div>
+                <div>Laps:</div><div>${currentLap - (disqualified ? 1 : 0)}/3</div>
+                <div>Off-Track Time:</div><div>${totalOffTrackTime.toFixed(1)}s</div>
+                <div>Car:</div><div>${carTypes[selectedCarType].name}</div>
+                <div>Track:</div><div>${tracks[selectedTrack].name}</div>
+                <div>Max Speed:</div><div>${Math.round(Math.abs(car.speed) * 12)} mph</div>
+            `;
+            
+            document.getElementById('gameOver').classList.remove('hidden');
+        }
+
+        function drawTrack() {
+            const track = tracks[selectedTrack];
+            const trackWidth = 40;
+            
+            // Draw track surface
+            ctx.strokeStyle = '#444444';
+            ctx.lineWidth = trackWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.beginPath();
+            track.trackPath.forEach((point, index) => {
+                const screenX = point.x - camera.x;
+                const screenY = point.y - camera.y;
+                if (index === 0) ctx.moveTo(screenX, screenY);
+                else ctx.lineTo(screenX, screenY);
+            });
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Draw track borders
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw inner border
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = trackWidth - 8;
+            ctx.stroke();
+            
+            // Draw checkpoints
+            track.checkpoints.forEach((checkpoint, index) => {
+                const screenX = checkpoint.x - camera.x;
+                const screenY = checkpoint.y - camera.y;
+                
+                if (checkpointsPassed[index]) {
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+                } else {
+                    ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+                }
+                
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText((index + 1).toString(), screenX, screenY + 4);
+            });
+        }
+
+        function drawCar() {
+            const screenX = car.x - camera.x;
+            const screenY = car.y - camera.y;
+
+            ctx.save();
+            ctx.translate(screenX, screenY);
+            ctx.rotate(car.angle);
+
+            const carStats = carTypes[selectedCarType];
+            ctx.fillStyle = carStats.color;
+            ctx.fillRect(-15, -8, 30, 16);
+            
+            ctx.fillStyle = '#333';
+            ctx.fillRect(-12, -6, 24, 12);
+            
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(-8, -4, 16, 8);
+            
+            // Wheels
+            ctx.fillStyle = '#222';
+            [-12, 6].forEach(x => [-10, 6].forEach(y => ctx.fillRect(x, y, 6, 4)));
+
+            if (car.boosting) {
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.7)';
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(-20 - i * 3, -2 + (Math.random() - 0.5) * 6, 8, 4);
+                }
+            }
+
+            if (car.handbraking) {
+                ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(-15, -8, 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(-15, 8, 10, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function updateUI() {
+            const speedMph = Math.round(Math.abs(car.speed) * 12);
+            document.getElementById('speed').textContent = speedMph;
+            document.getElementById('lap').textContent = currentLap;
+
+            let gear = Math.min(5, Math.max(1, Math.floor(speedMph / 15) + 1));
+            document.getElementById('gear').textContent = gear;
+
+            // Update track status
+            const statusEl = document.getElementById('trackStatus');
+            const statusText = document.getElementById('statusText');
+            const warningTimer = document.getElementById('warningTimer');
+            
+            if (isOffTrack) {
+                const timeLeft = 3 - (Date.now() - offTrackTime) / 1000;
+                statusEl.className = 'danger';
+                statusText.textContent = '⚠️ OFF TRACK!';
+                warningTimer.textContent = `DQ in: ${timeLeft.toFixed(1)}s`;
+            } else {
+                statusEl.className = '';
+                statusText.textContent = '✅ On Track';
+                warningTimer.textContent = '';
+            }
+
+            // Update minimap
+            updateMinimap();
+        }
+
+        function updateMinimap() {
+            const minimap = document.getElementById('minimap');
+            minimap.innerHTML = '';
+
+            const minimapCanvas = document.createElement('canvas');
+            minimapCanvas.width = 200;
+            minimapCanvas.height = 200;
+            const minimapCtx = minimapCanvas.getContext('2d');
+
+            minimapCtx.fillStyle = '#1a4d1a';
+            minimapCtx.fillRect(0, 0, 200, 200);
+
+            const track = tracks[selectedTrack];
+            const scale = 0.4;
+            const centerX = 100;
+            const centerY = 100;
+
+            // Draw track on minimap
+            minimapCtx.strokeStyle = '#666';
+            minimapCtx.lineWidth = 8;
+            minimapCtx.beginPath();
+            track.trackPath.forEach((point, index) => {
+                const mapX = centerX + (point.x - car.x) * scale;
+                const mapY = centerY + (point.y - car.y) * scale;
+                if (index === 0) minimapCtx.moveTo(mapX, mapY);
+                else minimapCtx.lineTo(mapX, mapY);
+            });
+            minimapCtx.closePath();
+            minimapCtx.stroke();
+
+            // Draw checkpoints on minimap
+            track.checkpoints.forEach((checkpoint, index) => {
+                const mapX = centerX + (checkpoint.x - car.x) * scale;
+                const mapY = centerY + (checkpoint.y - car.y) * scale;
+                
+                if (mapX >= 0 && mapX <= 200 && mapY >= 0 && mapY <= 200) {
+                    minimapCtx.fillStyle = checkpointsPassed[index] ? '#00ff00' : '#ffff00';
+                    minimapCtx.beginPath();
+                    minimapCtx.arc(mapX, mapY, 4, 0, Math.PI * 2);
+                    minimapCtx.fill();
+                }
+            });
+
+            // Draw car on minimap
+            minimapCtx.fillStyle = carTypes[selectedCarType].color;
+            minimapCtx.save();
+            minimapCtx.translate(centerX, centerY);
+            minimapCtx.rotate(car.angle);
+            minimapCtx.fillRect(-4, -2, 8, 4);
+            minimapCtx.restore();
+
+            // Draw direction indicator
+            minimapCtx.strokeStyle = '#ffffff';
+            minimapCtx.lineWidth = 2;
+            minimapCtx.beginPath();
+            minimapCtx.moveTo(centerX, centerY - 10);
+            minimapCtx.lineTo(centerX - 5, centerY - 5);
+            minimapCtx.moveTo(centerX, centerY - 10);
+            minimapCtx.lineTo(centerX + 5, centerY - 5);
+            minimapCtx.stroke();
+
+            minimap.appendChild(minimapCanvas);
+        }
+
+        function gameLoop() {
+            if (!gameStarted || raceFinished) return;
+
+            updateCar();
+
+            // Clear canvas with grass background
+            const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height));
+            gradient.addColorStop(0, '#4d8c4d');
+            gradient.addColorStop(1, '#2d5a2d');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grass texture grid
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            const startX = -(camera.x % gridSize);
+            const startY = -(camera.y % gridSize);
+
+            for (let x = startX; x < canvas.width + gridSize; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = startY; y < canvas.height + gridSize; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            drawTrack();
+            drawCar();
+            updateUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restartGame() {
+            document.getElementById('gameOver').classList.add('hidden');
+            startRace();
+        }
+
+        function changeTrack() {
+            gameStarted = false;
+            raceFinished = false;
+            
+            document.getElementById('gameOver').classList.add('hidden');
+            document.getElementById('ui').classList.add('hidden');
+            document.getElementById('instructions').classList.add('hidden');
+            
+            document.getElementById('selectionScreen').classList.remove('hidden');
+            document.getElementById('carSelection').style.display = 'none';
+            document.getElementById('trackSelection').style.display = 'block';
+            
+            // Reset track selection
+            document.querySelectorAll('#trackGrid .option').forEach(el => el.classList.remove('selected'));
+            document.querySelector('#trackSelection .continue-btn').disabled = true;
+            selectedTrack = null;
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Initialize the game
+        initializeSelections();
     </script>
 </body>
 </html>
